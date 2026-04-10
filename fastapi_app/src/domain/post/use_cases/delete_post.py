@@ -1,6 +1,6 @@
 from src.infrastructure.sqlite.database import database
 from src.infrastructure.sqlite.repositories.posts import PostRepository
-from src.core.exceptions import NotFoundError, DomainError, DatabaseError
+from src.core.exceptions import NotFoundError, AuthorizationError, DomainError, DatabaseError
 
 
 class DeletePost:
@@ -8,7 +8,7 @@ class DeletePost:
         self._database = database
         self._repo = PostRepository()
 
-    async def execute(self, post_id: int) -> bool:
+    async def execute(self, post_id: int, current_user_id: int, is_superuser: bool) -> bool:
         try:
             with self._database.session() as session:
                 existing = self._repo.get_by_id(session, post_id)
@@ -19,10 +19,13 @@ class DeletePost:
                         value=str(post_id)
                     )
                 
+                if existing.author_id != current_user_id and not is_superuser:
+                    raise AuthorizationError("Вы можете удалять только свои посты")
+                
                 deleted = self._repo.delete(session, post_id)
                 return deleted
         
-        except NotFoundError:
+        except (NotFoundError, AuthorizationError):
             raise
         except DatabaseError as e:
             raise DomainError(

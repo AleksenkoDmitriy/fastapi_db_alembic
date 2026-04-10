@@ -6,7 +6,8 @@ from src.api.depends import (
     category_by_slug,
     create_category,
     update_category,
-    delete_category
+    delete_category,
+    get_current_superuser
 )
 from src.domain.category.use_cases.get_categories import GetCategories
 from src.domain.category.use_cases.get_category import GetCategory
@@ -16,8 +17,10 @@ from src.domain.category.use_cases.update_category import UpdateCategory
 from src.domain.category.use_cases.delete_category import DeleteCategory
 from src.core.exceptions.domain_exceptions import NotFoundError, DuplicateError, DomainError
 from src.schemas.category import Category, CategoryCreate, CategoryUpdate
+from src.schemas.auth import TokenData
 
 router = APIRouter(prefix="/categories", tags=["categories"])
+
 
 @router.get("/", response_model=List[Category])
 async def get_categories(
@@ -26,7 +29,7 @@ async def get_categories(
     only_published: bool = True,
     use_case: GetCategories = Depends(categories)
 ):
-    """Получить список категорий"""
+    """Получить список категорий. Доступно всем."""
     try:
         return await use_case.execute(skip=skip, limit=limit, only_published=only_published)
     except DomainError as e:
@@ -41,7 +44,7 @@ async def get_category(
     category_id: int,
     use_case: GetCategory = Depends(category)
 ):
-    """Получить категорию по ID"""
+    """Получить категорию по ID. Доступно всем."""
     try:
         category_obj = await use_case.execute(category_id)
         if not category_obj:
@@ -62,7 +65,7 @@ async def get_category_by_slug(
     slug: str,
     use_case: GetCategoryBySlug = Depends(category_by_slug)
 ):
-    """Получить категорию по slug"""
+    """Получить категорию по slug. Доступно всем."""
     try:
         category_obj = await use_case.execute(slug)
         if not category_obj:
@@ -81,9 +84,10 @@ async def get_category_by_slug(
 @router.post("/", response_model=Category, status_code=status.HTTP_201_CREATED)
 async def create_category(
     category_data: CategoryCreate,
-    use_case: CreateCategory = Depends(create_category)
+    use_case: CreateCategory = Depends(create_category),
+    current_user: TokenData = Depends(get_current_superuser)
 ):
-    """Создать новую категорию"""
+    """Создать новую категорию. Только для суперпользователя."""
     try:
         return await use_case.execute(category_data)
     except DuplicateError as e:
@@ -102,9 +106,10 @@ async def create_category(
 async def update_category(
     category_id: int,
     category_data: CategoryUpdate,
-    use_case: UpdateCategory = Depends(update_category)
+    use_case: UpdateCategory = Depends(update_category),
+    current_user: TokenData = Depends(get_current_superuser)
 ):
-    """Обновить категорию"""
+    """Обновить категорию. Только для суперпользователя."""
     try:
         return await use_case.execute(category_id, category_data)
     except NotFoundError as e:
@@ -127,8 +132,10 @@ async def update_category(
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
     category_id: int,
-    use_case: DeleteCategory = Depends(delete_category)
+    use_case: DeleteCategory = Depends(delete_category),
+    current_user: TokenData = Depends(get_current_superuser)
 ):
+    """Удалить категорию. Только для суперпользователя."""
     try:
         await use_case.execute(category_id)
         return None

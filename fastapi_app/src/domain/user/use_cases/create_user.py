@@ -2,6 +2,7 @@ from src.infrastructure.sqlite.database import database
 from src.infrastructure.sqlite.repositories.users import UserRepository
 from src.schemas.users import UserCreate, User as UserSchema
 from src.core.exceptions import DuplicateError, DomainError, DatabaseError
+from src.resources.auth import get_password_hash
 
 
 class CreateUser:
@@ -12,11 +13,11 @@ class CreateUser:
     async def execute(self, user_data: UserCreate) -> UserSchema:
         try:
             with self._database.session() as session:
-                existing = self._repo.get_by_login(session, user_data.username)
+                existing = self._repo.get_by_username(session, user_data.username)
                 if existing:
                     raise DuplicateError(
                         entity_name="Пользователь",
-                        field="login",
+                        field="username",
                         value=user_data.username
                     )
                 
@@ -28,7 +29,10 @@ class CreateUser:
                         value=user_data.email
                     )
                 
-                user = self._repo.create(session, **user_data.model_dump())
+                user_dict = user_data.model_dump()
+                user_dict["password"] = get_password_hash(user_dict.pop("password"))
+                
+                user = self._repo.create(session, **user_dict)
                 
             return UserSchema.model_validate(user)
         

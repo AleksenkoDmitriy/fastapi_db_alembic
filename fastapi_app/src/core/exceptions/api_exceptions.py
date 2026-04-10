@@ -4,15 +4,25 @@ import logging
 
 from src.core.exceptions.domain_exceptions import (
     DomainError, NotFoundError, DuplicateError, 
-    ValidationError, BusinessRuleError
+    ValidationError, BusinessRuleError,
+    AuthenticationError, AuthorizationError, TokenError
 )
 from src.core.exceptions.infrastructure_exceptions import DatabaseError, InfrastructureError
+from src.core.exceptions.auth_exceptions import (
+    CredentialsException,
+    TokenExpiredException,
+    InvalidTokenException,
+    InsufficientPermissionsException,
+    UserNotFoundException,
+    UserInactiveException,
+    InvalidPasswordException,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app):
-    """Регистрация всех обработчиков исключений для FastAPI приложения"""
+    """Регистрация всех обработчиков исключений"""
     
     @app.exception_handler(NotFoundError)
     async def not_found_handler(request: Request, exc: NotFoundError):
@@ -72,6 +82,53 @@ def register_exception_handlers(app):
                     "type": "business_rule"
                 }
             }
+        )
+
+    @app.exception_handler(AuthenticationError)
+    async def authentication_error_handler(request: Request, exc: AuthenticationError):
+        logger.info(f"Authentication error: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                "error": {
+                    "code": 401,
+                    "message": exc.message,
+                    "details": exc.details,
+                    "type": "authentication"
+                }
+            },
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    @app.exception_handler(AuthorizationError)
+    async def authorization_error_handler(request: Request, exc: AuthorizationError):
+        logger.info(f"Authorization error: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "error": {
+                    "code": 403,
+                    "message": exc.message,
+                    "details": exc.details,
+                    "type": "authorization"
+                }
+            }
+        )
+
+    @app.exception_handler(TokenError)
+    async def token_error_handler(request: Request, exc: TokenError):
+        logger.info(f"Token error: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                "error": {
+                    "code": 401,
+                    "message": exc.message,
+                    "details": exc.details,
+                    "type": "token_error"
+                }
+            },
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
     @app.exception_handler(DatabaseError)

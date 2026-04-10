@@ -30,3 +30,40 @@ class ValidationError(DomainError):
 class BusinessRuleError(DomainError):
     """Нарушение бизнес-правил"""
     pass
+
+
+class AuthenticationError(DomainError):
+    """Ошибка аутентификации"""
+    def __init__(self, message: str = "Неверное имя пользователя или пароль"):
+        super().__init__(message, {"reason": "invalid_credentials"})
+
+
+class AuthorizationError(DomainError):
+    """Ошибка авторизации"""
+    def __init__(self, message: str = "Недостаточно прав для выполнения операции"):
+        super().__init__(message, {"reason": "insufficient_permissions"})
+
+
+class TokenError(DomainError):
+    """Ошибка работы с токеном"""
+    def __init__(self, message: str = "Недействительный токен"):
+        super().__init__(message, {"reason": "invalid_token"})
+
+
+class UserNotFoundByLoginException(AuthenticationError):
+    """Пользователь не найден по логину"""
+    def __init__(self, login: str):
+        super().__init__(f"Пользователь с логином '{login}' не найден")
+        self.login = login
+    
+    def get_detail(self):
+        return {"message": self.message, "type": "user_not_found", "login": self.login}
+
+
+class WrongPasswordException(AuthenticationError):
+    """Неверный пароль"""
+    def __init__(self):
+        super().__init__("Неверный пароль")
+    
+    def get_detail(self):
+        return {"message": self.message, "type": "wrong_password"}

@@ -6,6 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 sys.path.append(str(Path(__file__).parent))
 
 from src.api import categories, posts, comments, locations, users
+from src.api import auth
 from src.core.exceptions import register_exception_handlers
 
 
@@ -27,5 +28,6 @@ def create_app() -> FastAPI:
     app.include_router(comments.router)
     app.include_router(locations.router)
     app.include_router(users.router)
+    app.include_router(auth.router)
 
     return app

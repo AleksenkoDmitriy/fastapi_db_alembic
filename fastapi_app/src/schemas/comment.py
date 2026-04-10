@@ -28,7 +28,6 @@ class Comment(BaseModel):
 
 class CommentCreate(BaseModel):
     post_id: int
-    author_id: int
     text: str
     
     @field_validator('post_id')
@@ -36,13 +35,6 @@ class CommentCreate(BaseModel):
     def validate_post_id(cls, v: int) -> int:
         if v <= 0:
             raise ValueError('ID поста должен быть положительным числом')
-        return v
-    
-    @field_validator('author_id')
-    @classmethod
-    def validate_author_id(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError('ID автора должен быть положительным числом')
         return v
     
     @field_validator('text')

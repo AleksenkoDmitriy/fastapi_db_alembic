@@ -63,7 +63,6 @@ class PostCreate(BaseModelSchema):
     title: str = Field(max_length=256)
     text: str
     pub_date: datetime
-    author_id: int
     location_id: Optional[int] = None
     category_id: int
     image: Optional[str] = None
@@ -87,13 +86,6 @@ class PostCreate(BaseModelSchema):
             raise ValueError('Текст поста должен содержать минимум 20 символов')
         return v.strip()
     
-    @field_validator('author_id')
-    @classmethod
-    def validate_author_id(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError('ID автора должен быть положительным числом')
-        return v
-    
     @field_validator('category_id')
     @classmethod
     def validate_category_id(cls, v: int) -> int:
@@ -103,8 +95,8 @@ class PostCreate(BaseModelSchema):
     
     @field_validator('location_id')
     @classmethod
-    def valideate_location_id(cls, v:int) -> int:
-        if v <= 0:
+    def validate_location_id(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
             raise ValueError('ID локации должен быть положительным числом')
         return v
 

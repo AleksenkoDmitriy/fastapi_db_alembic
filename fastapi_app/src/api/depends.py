@@ -38,6 +38,20 @@ from src.domain.user.use_cases.create_user import CreateUser
 from src.domain.user.use_cases.update_user import UpdateUser
 from src.domain.user.use_cases.delete_user import DeleteUser
 
+# Auth Use Cases
+from src.domain.auth.use_cases.authenticate_user import AuthenticateUserUseCase
+from src.domain.auth.use_cases.create_access_token import CreateAccessTokenUseCase
+
+# Auth Dependencies (для защиты роутов)
+from fastapi import HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError
+from src.resources.auth import decode_token
+from src.core.exceptions.auth_exceptions import CredentialsException, TokenExpiredException, InvalidTokenException
+from src.schemas.auth import TokenData
+
+security = HTTPBearer()
+
 
 def get_db():
     with database.session() as session:
@@ -130,3 +144,62 @@ def update_user() -> UpdateUser:
 
 def delete_user() -> DeleteUser:
     return DeleteUser()
+
+
+# Auth Use Cases
+def authenticate_user_use_case() -> AuthenticateUserUseCase:
+    return AuthenticateUserUseCase()
+
+def create_access_token_use_case() -> CreateAccessTokenUseCase:
+    return CreateAccessTokenUseCase()
+
+
+# Auth Dependencies для защиты роутов
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> TokenData:
+    try:
+        token = credentials.credentials
+        payload = decode_token(token)
+        
+        user_id = payload.get("sub")
+        username = payload.get("username")
+        
+        if user_id is None or username is None:
+            raise CredentialsException()
+        
+        return TokenData(
+            user_id=int(user_id),
+            username=username,
+            is_superuser=payload.get("is_superuser", False),
+            is_staff=payload.get("is_staff", False)
+        )
+    
+    except JWTError as e:
+        if "expired" in str(e).lower():
+            raise TokenExpiredException()
+        raise InvalidTokenException()
+
+
+async def get_current_active_user(
+    current_user: TokenData = Depends(get_current_user)
+) -> TokenData:
+    return current_user
+
+
+async def get_current_superuser(
+    current_user: TokenData = Depends(get_current_active_user)
+) -> TokenData:
+    if not current_user.is_superuser:
+        from src.core.exceptions.auth_exceptions import InsufficientPermissionsException
+        raise InsufficientPermissionsException("Требуются права суперпользователя")
+    return current_user
+
+
+async def get_current_staff_user(
+    current_user: TokenData = Depends(get_current_active_user)
+) -> TokenData:
+    if not current_user.is_staff and not current_user.is_superuser:
+        from src.core.exceptions.auth_exceptions import InsufficientPermissionsException
+        raise InsufficientPermissionsException("Недостаточно прав для выполнения операции")
+    return current_user

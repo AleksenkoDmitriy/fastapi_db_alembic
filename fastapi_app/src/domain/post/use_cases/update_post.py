@@ -3,7 +3,7 @@ from src.infrastructure.sqlite.repositories.posts import PostRepository
 from src.infrastructure.sqlite.repositories.categories import CategoryRepository
 from src.infrastructure.sqlite.repositories.locations import LocationRepository
 from src.schemas.posts import PostUpdate, Post as PostSchema
-from src.core.exceptions import DomainError, NotFoundError, DatabaseError
+from src.core.exceptions import DomainError, NotFoundError, AuthorizationError, DatabaseError
 
 
 class UpdatePost:
@@ -13,7 +13,7 @@ class UpdatePost:
         self._category_repo = CategoryRepository()
         self._location_repo = LocationRepository()
 
-    async def execute(self, post_id: int, post_data: PostUpdate) -> PostSchema:
+    async def execute(self, post_id: int, post_data: PostUpdate, current_user_id: int, is_superuser: bool) -> PostSchema:
         try:
             with self._database.session() as session:
                 existing = self._repo.get_by_id(session, post_id)
@@ -23,6 +23,9 @@ class UpdatePost:
                         field="id",
                         value=str(post_id)
                     )
+                
+                if existing.author_id != current_user_id and not is_superuser:
+                    raise AuthorizationError("Вы можете редактировать только свои посты")
                 
                 if post_data.category_id is not None:
                     category = self._category_repo.get_by_id(session, post_data.category_id)
@@ -47,7 +50,7 @@ class UpdatePost:
                 
             return PostSchema.model_validate(updated)
         
-        except NotFoundError:
+        except (NotFoundError, AuthorizationError):
             raise
         except DatabaseError as e:
             raise DomainError(
