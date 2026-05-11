@@ -20,7 +20,7 @@ class UpdateComment:
                         value=str(comment_id)
                     )
                 
-                if existing.author_id != current_user_id and not is_superuser:
+                if existing.author_id != current_user_id:
                     raise AuthorizationError("Вы можете редактировать только свои комментарии")
                 
                 update_data = comment_data.model_dump(exclude_unset=True)

@@ -67,9 +67,9 @@ async def update_comment(
     use_case: UpdateComment = Depends(update_comment),
     current_user: TokenData = Depends(get_current_user)
 ):
-    """Обновить комментарий. Только автор или суперпользователь."""
+    """Обновить комментарий. Только автор."""
     try:
-        return await use_case.execute(comment_id, comment_data, current_user.user_id, current_user.is_superuser)
+        return await use_case.execute(comment_id, comment_data, current_user.user_id)
     except NotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

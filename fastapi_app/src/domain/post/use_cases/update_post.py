@@ -24,7 +24,7 @@ class UpdatePost:
                         value=str(post_id)
                     )
                 
-                if existing.author_id != current_user_id and not is_superuser:
+                if existing.author_id != current_user_id:
                     raise AuthorizationError("Вы можете редактировать только свои посты")
                 
                 if post_data.category_id is not None:

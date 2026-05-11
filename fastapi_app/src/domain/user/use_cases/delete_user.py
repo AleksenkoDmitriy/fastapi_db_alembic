@@ -1,6 +1,7 @@
 from src.infrastructure.sqlite.database import database
 from src.infrastructure.sqlite.repositories.users import UserRepository
 from src.infrastructure.sqlite.models.post import Post
+from src.infrastructure.sqlite.models.comment import Comment
 from src.core.exceptions import NotFoundError, DomainError, DatabaseError
 
 
@@ -21,8 +22,11 @@ class DeleteUser:
                     )
                 
                 from sqlalchemy import delete
-                stmt = delete(Post).where(Post.author_id == user_id)
-                session.execute(stmt)
+                stmt_comments = delete(Comment).where(Comment.author_id == user_id)
+                session.execute(stmt_comments)
+                
+                stmt_posts = delete(Post).where(Post.author_id == user_id)
+                session.execute(stmt_posts)
                 
                 deleted = self._repo.delete(session, user_id)
                 return deleted
