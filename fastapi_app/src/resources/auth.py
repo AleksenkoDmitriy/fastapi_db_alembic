@@ -5,7 +5,7 @@ import bcrypt
 from jose import jwt
 from src.core.config import settings
 
-SECRET_KEY = settings.SECRET_AUTH_KEY.get_secret_value()
+SECRET_KEY = settings.SECRET_AUTH_KEY
 ALGORITHM = settings.AUTH_ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 

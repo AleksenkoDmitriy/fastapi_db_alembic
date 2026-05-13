@@ -4,11 +4,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 from src.app import create_app
-from src.core.config import setup_logging
-
-setup_logging()
 
 app = create_app()
+
 
 async def run() -> None:
     config = uvicorn.Config(
@@ -20,6 +18,7 @@ async def run() -> None:
     )
 
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
