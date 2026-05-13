@@ -18,6 +18,8 @@ services:
       - ./fastapi_app:/fastapi_app
       - ./alembic:/alembic
       - ./logs:/fastapi_app/logs
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

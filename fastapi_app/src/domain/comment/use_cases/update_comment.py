@@ -2,6 +2,7 @@ from src.infrastructure.postgres.database import database
 from src.infrastructure.postgres.repositories.comments import CommentRepository
 from src.schemas.comment import CommentUpdate, Comment as CommentSchema
 from src.core.exceptions import DomainError, NotFoundError, AuthorizationError, DatabaseError
+from src.infrastructure.postgres.models.users import User
 
 
 class UpdateComment:
@@ -9,7 +10,7 @@ class UpdateComment:
         self._database = database
         self._repo = CommentRepository()
 
-    async def execute(self, comment_id: int, comment_data: CommentUpdate, current_user_id: int, is_superuser: bool) -> CommentSchema:
+    async def execute(self, comment_id: int, comment_data: CommentUpdate, current_user_id: int) -> CommentSchema:
         try:
             with self._database.session() as session:
                 existing = self._repo.get_by_id(session, comment_id)
@@ -25,6 +26,9 @@ class UpdateComment:
                 
                 update_data = comment_data.model_dump(exclude_unset=True)
                 updated = self._repo.update(session, comment_id, **update_data)
+                
+                session.refresh(updated)
+                updated.author = session.get(User, existing.author_id)
                 
             return CommentSchema.model_validate(updated)
         

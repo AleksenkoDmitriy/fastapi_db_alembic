@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
     LOG_FORMAT: str = os.getenv('LOG_FORMAT', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     LOG_FILE: Optional[str] = os.getenv('LOG_FILE')
+    USER_ACTION_LOG_FILE: Optional[str] = os.getenv('USER_ACTION_LOG_FILE', '/fastapi_app/logs/user_actions.log')
 
     @property
     def database_url(self) -> str:

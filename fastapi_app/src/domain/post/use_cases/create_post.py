@@ -4,6 +4,7 @@ from src.infrastructure.postgres.repositories.categories import CategoryReposito
 from src.infrastructure.postgres.repositories.locations import LocationRepository
 from src.schemas.posts import PostCreate, Post as PostSchema
 from src.core.exceptions import DomainError, NotFoundError, DatabaseError
+from sqlalchemy.orm import selectinload
 
 
 class CreatePost:
@@ -35,10 +36,21 @@ class CreatePost:
                 
                 post_dict = post_data.model_dump()
                 post_dict["author_id"] = author_id
-                
                 post = self._repo.create(session, **post_dict)
                 
-            return PostSchema.model_validate(post)
+                session.flush()
+                session.refresh(post)
+                
+                from src.infrastructure.postgres.models.users import User
+                from src.infrastructure.postgres.models.category import Category
+                from src.infrastructure.postgres.models.location import Location
+                
+                post.author = session.get(User, author_id)
+                post.category = session.get(Category, post_data.category_id)
+                if post_data.location_id:
+                    post.location = session.get(Location, post_data.location_id)
+                
+                return PostSchema.model_validate(post)
         
         except NotFoundError:
             raise

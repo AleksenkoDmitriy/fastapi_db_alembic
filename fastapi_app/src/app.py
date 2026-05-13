@@ -8,7 +8,12 @@ sys.path.append(str(Path(__file__).parent))
 from src.api import categories, posts, comments, locations, users
 from src.api import auth
 from src.core.exceptions import register_exception_handlers
-from src.core.config import settings
+from src.core.config import settings, setup_logging
+from src.api.middleware.logging_middleware import UserActionLoggingMiddleware
+
+# Инициализируем основное логирование
+setup_logging()
+
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -18,6 +23,9 @@ def create_app() -> FastAPI:
         version=settings.APP_VERSION,
         debug=settings.DEBUG
     )
+    
+    # Добавляем middleware для логирования действий пользователей
+    app.add_middleware(UserActionLoggingMiddleware)
     
     register_exception_handlers(app)
 

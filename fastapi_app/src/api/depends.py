@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Request, Depends
 from sqlalchemy.orm import Session
 from src.infrastructure.postgres.database import database
 from src.core.config import settings
@@ -157,7 +157,8 @@ def create_access_token_use_case() -> CreateAccessTokenUseCase:
 
 # Auth Dependencies для защиты роутов
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request = None  # Добавлен параметр request
 ) -> TokenData:
     try:
         token = credentials.credentials
@@ -168,6 +169,11 @@ async def get_current_user(
         
         if user_id is None or username is None:
             raise CredentialsException()
+        
+        # Сохраняем информацию о пользователе в request.state для middleware
+        if request:
+            request.state.user_id = int(user_id)
+            request.state.username = username
         
         return TokenData(
             user_id=int(user_id),
