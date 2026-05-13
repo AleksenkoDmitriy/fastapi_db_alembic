@@ -1,8 +1,8 @@
 from typing import List
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
-from src.infrastructure.sqlite.models.comment import Comment
-from src.infrastructure.sqlite.repositories.base import BaseRepository
+from src.infrastructure.postgres.models.comment import Comment
+from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
 
 

@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
-from src.infrastructure.sqlite.database import database
+from src.infrastructure.postgres.database import database
+from src.core.config import settings
 
 # Category Use Cases
 from src.domain.category.use_cases.get_categories import GetCategories

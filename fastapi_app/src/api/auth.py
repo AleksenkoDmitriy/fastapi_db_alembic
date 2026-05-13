@@ -13,7 +13,8 @@ from src.api.depends import (
     create_access_token_use_case,
     authenticate_user_use_case
 )
-from src.core.exceptions import handle_domain_auth_error
+from src.core.exceptions.auth_exceptions import handle_domain_auth_error
+from src.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -32,8 +33,8 @@ async def login_for_access_token(
     access_token = await create_token_use_case.execute(
         login=user.username,
         user_id=user.id,
-        is_superuser=user.is_superuser, 
-        is_staff=user.is_staff 
+        is_superuser=user.is_superuser,
+        is_staff=user.is_staff
     )
 
     return Token(access_token=access_token, token_type="bearer")

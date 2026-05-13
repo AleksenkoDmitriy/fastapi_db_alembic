@@ -1,6 +1,6 @@
 from typing import List
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.categories import CategoryRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.categories import CategoryRepository
 from src.schemas.category import Category as CategorySchema
 from src.core.exceptions import DomainError, DatabaseError
 

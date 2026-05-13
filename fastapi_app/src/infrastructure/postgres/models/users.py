@@ -1,12 +1,12 @@
-from src.infrastructure.sqlite.database import Base
+from src.infrastructure.postgres.database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Boolean, DateTime
 from datetime import datetime
 from typing import List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from fastapi_app.src.infrastructure.sqlite.models.post import Post
-    from fastapi_app.src.infrastructure.sqlite.models.comment import Comment
+    from fastapi_app.src.infrastructure.postgres.models.post import Post
+    from fastapi_app.src.infrastructure.postgres.models.comment import Comment
 
 class User(Base):
     __tablename__ = "auth_user"

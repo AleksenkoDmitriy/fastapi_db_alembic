@@ -1,6 +1,6 @@
 import logging
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.users import UserRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.users import UserRepository
 from src.schemas.users import User as UserSchema
 from src.resources.auth import verify_password
 from src.core.exceptions.domain_exceptions import UserNotFoundByLoginException, WrongPasswordException, AuthenticationError

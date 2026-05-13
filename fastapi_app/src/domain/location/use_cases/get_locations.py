@@ -1,6 +1,6 @@
 from typing import List
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.locations import LocationRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.locations import LocationRepository
 from src.schemas.location import Location as LocationSchema
 from src.core.exceptions import DomainError, DatabaseError
 

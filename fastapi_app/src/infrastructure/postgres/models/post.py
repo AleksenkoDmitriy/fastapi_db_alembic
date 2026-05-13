@@ -1,14 +1,14 @@
-from src.infrastructure.sqlite.database import Base
+from src.infrastructure.postgres.database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fastapi_app.src.infrastructure.sqlite.models.users import User
-    from fastapi_app.src.infrastructure.sqlite.models.category import Category
-    from fastapi_app.src.infrastructure.sqlite.models.location import Location
-    from fastapi_app.src.infrastructure.sqlite.models.comment import Comment
+    from fastapi_app.src.infrastructure.postgres.models.users import User
+    from fastapi_app.src.infrastructure.postgres.models.category import Category
+    from fastapi_app.src.infrastructure.postgres.models.location import Location
+    from fastapi_app.src.infrastructure.postgres.models.comment import Comment
 
 class Post(Base):
     __tablename__ = "blog_post"

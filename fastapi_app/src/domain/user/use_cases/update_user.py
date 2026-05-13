@@ -1,5 +1,5 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.users import UserRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.users import UserRepository
 from src.schemas.users import UserUpdate, User as UserSchema
 from src.core.exceptions import DomainError, NotFoundError, DuplicateError, DatabaseError
 
@@ -41,7 +41,20 @@ class UpdateUser:
                 update_data = user_data.model_dump(exclude_unset=True)
                 updated = self._repo.update(session, user_id, **update_data)
                 
-            return UserSchema.model_validate(updated)
+                user_data_dict = {
+                    "id": updated.id,
+                    "username": updated.username,
+                    "email": updated.email,
+                    "first_name": updated.first_name,
+                    "last_name": updated.last_name,
+                    "is_superuser": updated.is_superuser,
+                    "is_staff": updated.is_staff,
+                    "is_active": updated.is_active,
+                    "last_login": updated.last_login,
+                    "date_joined": updated.date_joined,
+                }
+                
+            return UserSchema.model_validate(user_data_dict)
         
         except (NotFoundError, DuplicateError):
             raise

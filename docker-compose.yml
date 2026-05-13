@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: blogpass
+      POSTGRES_DB: blog
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://blog:blogpass@db:5432/blog
+    volumes:
+      - ./fastapi_app:/app/fastapi_app
+      - ./alembic:/app/alembic
+
+volumes:
+  postgres_data:

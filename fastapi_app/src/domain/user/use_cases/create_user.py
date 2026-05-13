@@ -1,5 +1,5 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.users import UserRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.users import UserRepository
 from src.schemas.users import UserCreate, User as UserSchema
 from src.core.exceptions import DuplicateError, DomainError, DatabaseError
 from src.resources.auth import get_password_hash
@@ -34,7 +34,21 @@ class CreateUser:
                 
                 user = self._repo.create(session, **user_dict)
                 
-            return UserSchema.model_validate(user)
+                # Преобразуем в словарь до закрытия сессии
+                user_data_dict = {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_superuser": user.is_superuser,
+                    "is_staff": user.is_staff,
+                    "is_active": user.is_active,
+                    "last_login": user.last_login,
+                    "date_joined": user.date_joined,
+                }
+                
+            return UserSchema.model_validate(user_data_dict)
         
         except DuplicateError:
             raise

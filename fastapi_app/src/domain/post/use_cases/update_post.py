@@ -1,7 +1,7 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.posts import PostRepository
-from src.infrastructure.sqlite.repositories.categories import CategoryRepository
-from src.infrastructure.sqlite.repositories.locations import LocationRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.posts import PostRepository
+from src.infrastructure.postgres.repositories.categories import CategoryRepository
+from src.infrastructure.postgres.repositories.locations import LocationRepository
 from src.schemas.posts import PostUpdate, Post as PostSchema
 from src.core.exceptions import DomainError, NotFoundError, AuthorizationError, DatabaseError
 

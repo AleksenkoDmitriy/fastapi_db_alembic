@@ -2,8 +2,8 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
-from src.infrastructure.sqlite.models.users import User
-from src.infrastructure.sqlite.repositories.base import BaseRepository
+from src.infrastructure.postgres.models.users import User
+from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
 
 

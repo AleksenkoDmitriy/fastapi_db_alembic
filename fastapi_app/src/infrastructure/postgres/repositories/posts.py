@@ -2,8 +2,8 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
-from src.infrastructure.sqlite.models.post import Post
-from src.infrastructure.sqlite.repositories.base import BaseRepository
+from src.infrastructure.postgres.models.post import Post
+from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
 
 

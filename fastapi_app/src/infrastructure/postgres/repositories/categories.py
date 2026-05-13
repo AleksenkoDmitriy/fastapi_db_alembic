@@ -1,8 +1,8 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from src.infrastructure.sqlite.models.category import Category
-from src.infrastructure.sqlite.repositories.base import BaseRepository
+from src.infrastructure.postgres.models.category import Category
+from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
 
 

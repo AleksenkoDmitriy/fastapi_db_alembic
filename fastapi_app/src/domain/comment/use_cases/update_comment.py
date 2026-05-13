@@ -1,5 +1,5 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.comments import CommentRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.comments import CommentRepository
 from src.schemas.comment import CommentUpdate, Comment as CommentSchema
 from src.core.exceptions import DomainError, NotFoundError, AuthorizationError, DatabaseError
 

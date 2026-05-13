@@ -1,6 +1,6 @@
 from typing import List, Optional
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.posts import PostRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.posts import PostRepository
 from src.schemas.posts import PostListResponse
 from src.core.exceptions import DomainError, DatabaseError
 

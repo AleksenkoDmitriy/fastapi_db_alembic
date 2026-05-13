@@ -1,7 +1,7 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.users import UserRepository
-from src.infrastructure.sqlite.models.post import Post
-from src.infrastructure.sqlite.models.comment import Comment
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.users import UserRepository
+from src.infrastructure.postgres.models.post import Post
+from src.infrastructure.postgres.models.comment import Comment
 from src.core.exceptions import NotFoundError, DomainError, DatabaseError
 
 

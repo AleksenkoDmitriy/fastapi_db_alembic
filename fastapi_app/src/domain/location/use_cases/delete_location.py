@@ -1,5 +1,5 @@
-from src.infrastructure.sqlite.database import database
-from src.infrastructure.sqlite.repositories.locations import LocationRepository
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.repositories.locations import LocationRepository
 from src.core.exceptions import NotFoundError, DomainError, DatabaseError
 
 

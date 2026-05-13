@@ -1,12 +1,12 @@
-from src.infrastructure.sqlite.database import Base
+from src.infrastructure.postgres.database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Text, DateTime, ForeignKey, Integer
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fastapi_app.src.infrastructure.sqlite.models.post import Post
-    from fastapi_app.src.infrastructure.sqlite.models.users import User
+    from fastapi_app.src.infrastructure.postgres.models.post import Post
+    from fastapi_app.src.infrastructure.postgres.models.users import User
 
 class Comment(Base):
     __tablename__ = "blog_comment"
