@@ -12,13 +12,17 @@ services:
     build: .
     ports:
       - "8000:8000"
+
     depends_on:
       - db
-    environment:
-      - DATABASE_URL=postgresql://blog:blogpass@db:5432/blog
+
+    env_file:
+      - .env
+
     volumes:
-      - ./fastapi_app:/app/fastapi_app
-      - ./alembic:/app/alembic
+      - ./fastapi_app:/fastapi_app
+      - ./alembic:/alembic
+      - ./logs:/fastapi_app/logs
 
 volumes:
   postgres_data:
