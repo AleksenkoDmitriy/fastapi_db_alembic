@@ -1,5 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from typing import List, Optional
+from datetime import datetime
+from pathlib import Path
+import uuid
+import shutil
+
 from src.api.depends import (
     posts,
     post,
@@ -17,6 +22,12 @@ from src.domain.post.use_cases.delete_post import DeletePost
 from src.core.exceptions.domain_exceptions import NotFoundError, DomainError, AuthorizationError
 from src.schemas.posts import Post, PostCreate, PostUpdate, PostListResponse
 from src.schemas.auth import TokenData
+from src.core.config import settings
+from src.infrastructure.postgres.database import database
+from src.infrastructure.postgres.models.post import Post as PostModel
+from src.infrastructure.postgres.models.users import User
+from src.infrastructure.postgres.models.category import Category
+from src.infrastructure.postgres.models.location import Location
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -45,13 +56,13 @@ async def get_post(
 ):
     """Получить пост по ID. Доступно всем."""
     try:
-        post = await use_case.execute(post_id)
-        if not post:
+        post_obj = await use_case.execute(post_id)
+        if not post_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Пост не найден"
             )
-        return post
+        return post_obj
     except DomainError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -59,15 +70,89 @@ async def get_post(
         )
 
 
+def _get_post_with_relations(post_id: int):
+    """Вспомогательная функция для получения поста со всеми связями в активной сессии"""
+    with database.session() as session:
+        db_post = session.query(PostModel).filter(PostModel.id == post_id).first()
+        if not db_post:
+            return None
+        
+        author = session.get(User, db_post.author_id)
+        category = session.get(Category, db_post.category_id)
+        location = session.get(Location, db_post.location_id) if db_post.location_id else None
+        
+        post_dict = {
+            "id": db_post.id,
+            "title": db_post.title,
+            "text": db_post.text,
+            "pub_date": db_post.pub_date,
+            "is_published": db_post.is_published,
+            "created_at": db_post.created_at,
+            "image": db_post.image,
+            "author": author,
+            "category": category,
+            "location": location
+        }
+        return Post.model_validate(post_dict)
+
+
 @router.post("/", response_model=Post, status_code=status.HTTP_201_CREATED)
 async def create_post(
-    post_data: PostCreate,
+    title: str = Form(...),
+    text: str = Form(...),
+    pub_date: str = Form(...),
+    category_id: int = Form(...),
+    location_id: Optional[int] = Form(None),
+    is_published: bool = Form(True),
+    image: Optional[UploadFile] = File(None),
     use_case: CreatePost = Depends(create_post),
     current_user: TokenData = Depends(get_current_user)
 ):
-    """Создать новый пост. Автор определяется автоматически из токена."""
+    """
+    Создать новый пост с возможностью сразу загрузить картинку.
+    """
     try:
-        return await use_case.execute(post_data, current_user.user_id)
+        pub_date_dt = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+    except:
+        pub_date_dt = datetime.now()
+    
+    post_data = PostCreate(
+        title=title,
+        text=text,
+        pub_date=pub_date_dt,
+        category_id=category_id,
+        location_id=location_id,
+        is_published=is_published
+    )
+    
+    try:
+        post = await use_case.execute(post_data, current_user.user_id)
+        
+        if image:
+            if not image.content_type or not image.content_type.startswith('image/'):
+                raise HTTPException(status_code=400, detail="File must be an image")
+            
+            upload_dir = Path(settings.UPLOAD_DIR)
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_ext = Path(image.filename).suffix
+            unique_filename = f"{post.id}_{uuid.uuid4().hex}{file_ext}"
+            file_path = upload_dir / unique_filename
+            
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+            
+            image_url = f"/uploads/{unique_filename}"
+            
+            with database.session() as session:
+                session.query(PostModel).filter(PostModel.id == post.id).update({"image": image_url})
+                session.commit()
+        
+        result = _get_post_with_relations(post.id)
+        if not result:
+            raise HTTPException(status_code=404, detail="Post not found after creation")
+        return result
+        
     except NotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -78,18 +163,92 @@ async def create_post(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": e.message, "details": e.details}
         )
-    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": f"Ошибка при создании поста: {str(e)}"}
+        )
 
 @router.put("/{post_id}", response_model=Post)
 async def update_post(
     post_id: int,
-    post_data: PostUpdate,
+    title: Optional[str] = Form(None),
+    text: Optional[str] = Form(None),
+    pub_date: Optional[str] = Form(None),
+    category_id: Optional[int] = Form(None),
+    location_id: Optional[int] = Form(None),
+    is_published: Optional[bool] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    remove_image: Optional[bool] = Form(False),
     use_case: UpdatePost = Depends(update_post),
     current_user: TokenData = Depends(get_current_user)
 ):
-    """Обновить пост. Только автор или суперпользователь."""
+    update_dict = {}
+    
+    if title is not None:
+        update_dict["title"] = title
+    if text is not None:
+        update_dict["text"] = text
+    if pub_date is not None:
+        try:
+            update_dict["pub_date"] = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+        except:
+            pass
+    if category_id is not None:
+        update_dict["category_id"] = category_id
+    if location_id is not None:
+        update_dict["location_id"] = location_id
+    if is_published is not None:
+        update_dict["is_published"] = is_published
+    
     try:
-        return await use_case.execute(post_id, post_data, current_user.user_id, current_user.is_superuser)
+        if image and image.filename:
+            if not image.content_type or not image.content_type.startswith('image/'):
+                raise HTTPException(status_code=400, detail="File must be an image")
+            
+            upload_dir = Path(settings.UPLOAD_DIR)
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_ext = Path(image.filename).suffix
+            unique_filename = f"{post_id}_{uuid.uuid4().hex}{file_ext}"
+            file_path = upload_dir / unique_filename
+            
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+            
+            image_url = f"/uploads/{unique_filename}"
+            update_dict["image"] = image_url
+            
+            with database.session() as session:
+                old_post = session.query(PostModel).filter(PostModel.id == post_id).first()
+                if old_post and old_post.image:
+                    old_image_path = Path(settings.UPLOAD_DIR) / Path(old_post.image).name
+                    if old_image_path.exists():
+                        old_image_path.unlink()
+        
+        elif remove_image:
+            with database.session() as session:
+                old_post = session.query(PostModel).filter(PostModel.id == post_id).first()
+                if old_post:
+                    if old_post.image:
+                        old_image_path = Path(settings.UPLOAD_DIR) / Path(old_post.image).name
+                        if old_image_path.exists():
+                            old_image_path.unlink()
+                    
+                    session.query(PostModel).filter(PostModel.id == post_id).update({"image": None})
+                    session.commit()
+            
+            update_dict.pop("image", None)
+        
+        if update_dict:
+            post_update = PostUpdate(**update_dict)
+            await use_case.execute(post_id, post_update, current_user.user_id, current_user.is_superuser)
+        
+        result = _get_post_with_relations(post_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="Post not found after update")
+        return result
+        
     except NotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

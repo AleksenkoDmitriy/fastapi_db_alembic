@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 sys.path.append(str(Path(__file__).parent))
 
@@ -11,7 +12,6 @@ from src.core.exceptions import register_exception_handlers
 from src.core.config import settings, setup_logging
 from src.api.middleware.logging_middleware import UserActionLoggingMiddleware
 
-# Инициализируем основное логирование
 setup_logging()
 
 
@@ -24,7 +24,6 @@ def create_app() -> FastAPI:
         debug=settings.DEBUG
     )
     
-    # Добавляем middleware для логирования действий пользователей
     app.add_middleware(UserActionLoggingMiddleware)
     
     register_exception_handlers(app)
@@ -44,6 +43,10 @@ def create_app() -> FastAPI:
     app.include_router(locations.router)
     app.include_router(users.router)
     app.include_router(auth.router)
+    
+    uploads_dir = Path("/fastapi_app/uploads")
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
     
     @app.get("/")
     async def root():

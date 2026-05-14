@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
+    UPLOAD_DIR: str = "/fastapi_app/uploads"
+    
     class Config:
         extra = "ignore"
 

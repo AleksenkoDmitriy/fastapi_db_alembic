@@ -18,6 +18,7 @@ services:
       - ./fastapi_app:/fastapi_app
       - ./alembic:/alembic
       - ./logs:/fastapi_app/logs
+      - ./uploads:/fastapi_app/uploads
     env_file:
       - .env
 
