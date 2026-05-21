@@ -23,7 +23,7 @@ class Post(Base):
     
     author_id: Mapped[int] = mapped_column(ForeignKey("auth_user.id"), nullable=False)
     location_id: Mapped[Optional[int]] = mapped_column(ForeignKey("blog_location.id"), nullable=True)
-    category_id: Mapped[int] = mapped_column(ForeignKey("blog_category.id"), nullable=False)
+    category_id: Mapped[int] = mapped_column(ForeignKey("blog_category.id", ondelete="RESTRICT"), nullable=False)
     
     author: Mapped["User"] = relationship("User", back_populates="posts")
     category: Mapped["Category"] = relationship("Category", back_populates="posts")

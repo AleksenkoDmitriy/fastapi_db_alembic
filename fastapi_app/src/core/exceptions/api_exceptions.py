@@ -1,5 +1,7 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
 from src.core.exceptions.domain_exceptions import (
@@ -23,6 +25,43 @@ logger = logging.getLogger(__name__)
 
 def register_exception_handlers(app):
     """Регистрация всех обработчиков исключений"""
+    
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        errors = []
+        for error in exc.errors():
+            field = " -> ".join(str(loc) for loc in error["loc"])
+            errors.append({
+                "field": field,
+                "message": error["msg"],
+                "type": error["type"]
+            })
+        
+        logger.info(f"Validation error: {errors}")
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "error": {
+                    "code": 422,
+                    "message": "Ошибка валидации данных",
+                    "details": errors,
+                    "type": "validation_error"
+                }
+            }
+        )
+    
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {
+                    "code": exc.status_code,
+                    "message": exc.detail,
+                    "type": "http_exception"
+                }
+            }
+        )
     
     @app.exception_handler(NotFoundError)
     async def not_found_handler(request: Request, exc: NotFoundError):
@@ -133,8 +172,7 @@ def register_exception_handlers(app):
 
     @app.exception_handler(DatabaseError)
     async def database_error_handler(request: Request, exc: DatabaseError):
-        logger.error(f"Database error: {exc.message}", 
-                    exc_info=exc.original_error if exc.original_error else True)
+        logger.error(f"Database error: {exc.message}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
@@ -148,8 +186,7 @@ def register_exception_handlers(app):
 
     @app.exception_handler(InfrastructureError)
     async def infrastructure_error_handler(request: Request, exc: InfrastructureError):
-        logger.error(f"Infrastructure error: {exc.message}", 
-                    exc_info=exc.original_error if exc.original_error else True)
+        logger.error(f"Infrastructure error: {exc.message}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={

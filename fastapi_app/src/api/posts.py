@@ -11,8 +11,7 @@ from src.api.depends import (
     create_post,
     update_post,
     delete_post,
-    get_current_user,
-    get_current_superuser
+    get_current_user
 )
 from src.domain.post.use_cases.get_posts import GetPosts
 from src.domain.post.use_cases.get_post import GetPost
@@ -102,7 +101,7 @@ async def create_post(
     text: str = Form(...),
     pub_date: str = Form(...),
     category_id: int = Form(...),
-    location_id: Optional[int] = Form(None),
+    location_id: int = Form(...),
     is_published: bool = Form(True),
     image: Optional[UploadFile] = File(None),
     use_case: CreatePost = Depends(create_post),
@@ -172,14 +171,14 @@ async def create_post(
 @router.put("/{post_id}", response_model=Post)
 async def update_post(
     post_id: int,
-    title: Optional[str] = Form(None),
-    text: Optional[str] = Form(None),
-    pub_date: Optional[str] = Form(None),
-    category_id: Optional[int] = Form(None),
-    location_id: Optional[int] = Form(None),
-    is_published: Optional[bool] = Form(None),
-    image: Optional[UploadFile] = File(None),
-    remove_image: Optional[bool] = Form(False),
+    title: str = Form(None),
+    text: str = Form(None),
+    pub_date: str = Form(None),
+    category_id: int = Form(None),
+    location_id: int = Form(None),
+    is_published: bool = Form(None),
+    image: UploadFile = File(None),
+    remove_image: bool = Form(False),
     use_case: UpdatePost = Depends(update_post),
     current_user: TokenData = Depends(get_current_user)
 ):

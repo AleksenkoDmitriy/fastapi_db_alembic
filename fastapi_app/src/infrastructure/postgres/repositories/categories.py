@@ -1,9 +1,9 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from src.infrastructure.postgres.models.category import Category
 from src.infrastructure.postgres.repositories.base import BaseRepository
-from src.core.exceptions.infrastructure_exceptions import DatabaseError
+from src.core.exceptions.infrastructure_exceptions import DatabaseError, ForeignKeyViolationError
 
 
 class CategoryRepository(BaseRepository[Category]):
@@ -29,3 +29,21 @@ class CategoryRepository(BaseRepository[Category]):
             return session.query(self.model).filter(self.model.title.contains(title)).all()
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при поиске по названию '{title}': {str(e)}", e)
+        
+    def delete(self, session: Session, id: int) -> bool:
+        try:
+            category = self.get_by_id(session, id)
+            if category:
+                session.delete(category)
+                session.flush()
+                return True
+            return False
+        except IntegrityError as e:
+            if "foreign key" in str(e).lower() or "violates foreign key" in str(e).lower():
+                raise ForeignKeyViolationError(
+                    f"Невозможно удалить категорию ID={id}: есть связанные посты",
+                    e
+                )
+            raise DatabaseError(f"Ошибка целостности при удалении категории ID={id}: {str(e)}", e)
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка при удалении категории ID={id}: {str(e)}", e)

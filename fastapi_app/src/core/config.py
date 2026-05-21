@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES', '30'))
     AUTH_ALGORITHM: str = os.getenv('AUTH_ALGORITHM', 'HS256')
     SECRET_AUTH_KEY: str = os.getenv('SECRET_AUTH_KEY', '')
-    POSTGRES_HOST: str = os.getenv('POSTGRES_HOST', 'db')
+    POSTGRES_HOST: str = os.getenv('POSTGRES_HOST', 'postgres')
     POSTGRES_PORT: int = int(os.getenv('POSTGRES_PORT', '5432'))
     POSTGRES_DB: str = os.getenv('POSTGRES_DB', 'blog')
     POSTGRES_USER: str = os.getenv('POSTGRES_USER', 'blog')

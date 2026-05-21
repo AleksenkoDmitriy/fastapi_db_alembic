@@ -14,3 +14,8 @@ class DatabaseError(InfrastructureError):
 class RepositoryError(InfrastructureError):
     """Ошибка репозитория"""
     pass
+
+
+class ForeignKeyViolationError(DatabaseError):
+    """Ошибка внешнего ключа"""
+    pass
