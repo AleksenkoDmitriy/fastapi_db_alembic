@@ -2,12 +2,13 @@ from src.infrastructure.postgres.database import database
 from src.infrastructure.postgres.repositories.posts import PostRepository
 from src.infrastructure.postgres.repositories.categories import CategoryRepository
 from src.infrastructure.postgres.repositories.locations import LocationRepository
-from src.schemas.posts import PostCreate, Post as PostSchema
+from src.schemas.posts import PostCreate, PostResponse
 from src.core.exceptions.domain_exceptions import DomainError, NotFoundError
 from src.core.exceptions.infrastructure_exceptions import DatabaseError             
 from src.infrastructure.postgres.models.users import User
 from src.infrastructure.postgres.models.category import Category
 from src.infrastructure.postgres.models.location import Location
+
 
 class CreatePost:
     def __init__(self):
@@ -16,7 +17,7 @@ class CreatePost:
         self._category_repo = CategoryRepository()
         self._location_repo = LocationRepository()
 
-    async def execute(self, post_data: PostCreate, author_id: int) -> PostSchema:
+    async def execute(self, post_data: PostCreate, author_id: int) -> PostResponse:
         try:
             with self._database.session() as session:
                 category = self._category_repo.get_by_id(session, post_data.category_id)
@@ -43,12 +44,9 @@ class CreatePost:
                 session.flush()
                 session.refresh(post)
                 
-                post.author = session.get(User, author_id)
-                post.category = session.get(Category, post_data.category_id)
-                if post_data.location_id:
-                    post.location = session.get(Location, post_data.location_id)
+                post.likes_count = 0
                 
-                return PostSchema.model_validate(post)
+                return PostResponse.model_validate(post)
         
         except NotFoundError:
             raise

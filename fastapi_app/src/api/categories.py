@@ -15,7 +15,7 @@ from src.domain.category.use_cases.get_category_by_slug import GetCategoryBySlug
 from src.domain.category.use_cases.create_category import CreateCategory
 from src.domain.category.use_cases.update_category import UpdateCategory
 from src.domain.category.use_cases.delete_category import DeleteCategory
-from src.core.exceptions.domain_exceptions import NotFoundError, DuplicateError, DomainError
+from src.core.exceptions.domain_exceptions import NotFoundError, DuplicateError, DomainError, BusinessRuleError
 from src.schemas.category import Category, CategoryCreate, CategoryUpdate
 from src.schemas.auth import TokenData
 
@@ -142,6 +142,11 @@ async def delete_category(
     except NotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": e.message, "details": e.details}
+        )
+    except BusinessRuleError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail={"message": e.message, "details": e.details}
         )
     except DomainError as e:

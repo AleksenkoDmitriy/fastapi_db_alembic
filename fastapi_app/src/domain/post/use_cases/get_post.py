@@ -1,6 +1,6 @@
 from src.infrastructure.postgres.database import database
 from src.infrastructure.postgres.repositories.posts import PostRepository
-from src.schemas.posts import Post as PostSchema
+from src.schemas.posts import PostResponse
 from src.core.exceptions import DomainError, DatabaseError
 
 
@@ -9,13 +9,15 @@ class GetPost:
         self._database = database
         self._repo = PostRepository()
 
-    async def execute(self, post_id: int) -> PostSchema | None:
+    async def execute(self, post_id: int) -> PostResponse | None:
         try:
             with self._database.session() as session:
-                post = self._repo.get_by_id_with_relations(session, post_id)
+                result = self._repo.get_by_id_with_likes_count(session, post_id)
                 
-            if post:
-                return PostSchema.model_validate(post)
+            if result:
+                post, likes_count = result
+                post.likes_count = likes_count or 0
+                return PostResponse.model_validate(post)
             return None
         
         except DatabaseError as e:

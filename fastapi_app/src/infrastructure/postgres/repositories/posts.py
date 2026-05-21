@@ -1,12 +1,12 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
+from sqlalchemy import func
 from src.infrastructure.postgres.models.post import Post
+from src.infrastructure.postgres.models.like import Like
 from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError, IntegrityViolationError
-from src.infrastructure.postgres.models.like import Like
-from sqlalchemy import func
 
 
 class PostRepository(BaseRepository[Post]):
@@ -98,7 +98,7 @@ class PostRepository(BaseRepository[Post]):
         limit: int = 10,
         category_id: Optional[int] = None,
         location_id: Optional[int] = None
-    ) -> List[tuple]:
+    ) -> List[Tuple[Post, int]]:
         """Получить опубликованные посты с количеством лайков"""
         try:
             query = session.query(
@@ -109,7 +109,7 @@ class PostRepository(BaseRepository[Post]):
             ).filter(
                 Post.is_published == True,
                 Post.pub_date <= datetime.now()
-            )
+            ).group_by(Post.id)
             
             if category_id:
                 query = query.filter(Post.category_id == category_id)
@@ -117,7 +117,7 @@ class PostRepository(BaseRepository[Post]):
             if location_id:
                 query = query.filter(Post.location_id == location_id)
             
-            results = query.group_by(Post.id).order_by(
+            results = query.order_by(
                 Post.pub_date.desc()
             ).offset(skip).limit(limit).all()
             
@@ -125,7 +125,7 @@ class PostRepository(BaseRepository[Post]):
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при получении постов с лайками: {str(e)}", e)
     
-    def get_by_id_with_likes_count(self, session: Session, post_id: int) -> Optional[tuple]:
+    def get_by_id_with_likes_count(self, session: Session, post_id: int) -> Optional[Tuple[Post, int]]:
         """Получить пост по ID с количеством лайков"""
         try:
             result = session.query(
@@ -140,3 +140,12 @@ class PostRepository(BaseRepository[Post]):
             return result
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при получении поста ID={post_id} с лайками: {str(e)}", e)
+
+    def get_by_category(self, session: Session, category_id: int) -> List[Post]:
+        """Получить все посты категории"""
+        try:
+            return session.query(self.model).filter(
+                self.model.category_id == category_id
+            ).all()
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка при получении постов категории ID={category_id}: {str(e)}", e)

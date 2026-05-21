@@ -32,18 +32,18 @@ class CategoryRepository(BaseRepository[Category]):
         
     def delete(self, session: Session, id: int) -> bool:
         try:
-            category = self.get_by_id(session, id)
+            category = session.query(self.model).filter(self.model.id == id).first()
             if category:
                 session.delete(category)
                 session.flush()
                 return True
             return False
         except IntegrityError as e:
-            if "foreign key" in str(e).lower() or "violates foreign key" in str(e).lower():
+            if "foreign key" in str(e).lower() or "not null" in str(e).lower():
                 raise ForeignKeyViolationError(
-                    f"Невозможно удалить категорию ID={id}: есть связанные посты",
-                    e
+                    f"Невозможно удалить категорию ID={id}, так как она используется",
+                    details={"category_id": id, "original_error": str(e)}
                 )
             raise DatabaseError(f"Ошибка целостности при удалении категории ID={id}: {str(e)}", e)
         except SQLAlchemyError as e:
-            raise DatabaseError(f"Ошибка при удалении категории ID={id}: {str(e)}", e)
+            raise DatabaseError(f"Ошибка БД при удалении категории ID={id}: {str(e)}", e)

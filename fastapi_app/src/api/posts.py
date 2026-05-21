@@ -21,7 +21,7 @@ from src.domain.post.use_cases.update_post import UpdatePost
 from src.domain.post.use_cases.delete_post import DeletePost
 from src.core.exceptions.domain_exceptions import NotFoundError, DomainError, AuthorizationError
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
-from src.schemas.posts import Post, PostCreate, PostUpdate, PostResponse
+from src.schemas.posts import PostCreate, PostUpdate, PostResponse
 from src.schemas.auth import TokenData
 from src.core.config import settings
 from src.infrastructure.postgres.database import database
@@ -104,10 +104,10 @@ def _get_post_with_relations(post_id: int):
             "category": category,
             "location": location
         }
-        return Post.model_validate(post_dict)
+        return post_dict
 
 
-@router.post("/", response_model=Post, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     title: str = Form(...),
     text: str = Form(...),
@@ -119,22 +119,31 @@ async def create_post(
     use_case: CreatePost = Depends(create_post),
     current_user: TokenData = Depends(get_current_user)
 ):
+    """
+    Создать новый пост с возможностью сразу загрузить картинку.
+    """
     try:
         location_id_value = location_id if location_id > 0 else None
         
-        post_dict = {
-            "title": title.strip(),
-            "text": text.strip(),
-            "category_id": category_id,
-            "location_id": location_id_value,
-            "is_published": is_published
-        }
-        
+        pub_date_dt = None
         if pub_date:
-            post_dict["pub_date"] = pub_date
+            try:
+                pub_date_dt = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"message": "Неверный формат даты", "field": "pub_date"}
+                )
         
         try:
-            post_data = PostCreate(**post_dict)
+            post_data = PostCreate(
+                title=title.strip(),
+                text=text.strip(),
+                pub_date=pub_date_dt,
+                category_id=category_id,
+                location_id=location_id_value,
+                is_published=is_published
+            )
         except PydanticValidationError as e:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -162,11 +171,10 @@ async def create_post(
             with database.session() as session:
                 session.query(PostModel).filter(PostModel.id == post.id).update({"image": image_url})
                 session.commit()
+            
+            post.image = image_url
         
-        result = _get_post_with_relations(post.id)
-        if not result:
-            raise HTTPException(status_code=404, detail="Post not found after creation")
-        return result
+        return post
         
     except NotFoundError as e:
         raise HTTPException(
@@ -192,7 +200,7 @@ async def create_post(
         )
 
 
-@router.put("/{post_id}", response_model=Post)
+@router.put("/{post_id}", response_model=PostResponse)
 async def update_post(
     post_id: int,
     title: Optional[str] = Form(None),
@@ -249,6 +257,7 @@ async def update_post(
         if is_published is not None:
             update_dict["is_published"] = is_published
         
+        image_url = None
         if image and image.filename:
             if not image.content_type or not image.content_type.startswith('image/'):
                 raise HTTPException(status_code=400, detail="File must be an image")
@@ -284,12 +293,11 @@ async def update_post(
         
         if update_dict:
             post_update = PostUpdate(**update_dict)
-            await use_case.execute(post_id, post_update, current_user.user_id, current_user.is_superuser)
-        
-        result = _get_post_with_relations(post_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="Post not found after update")
-        return result
+            updated_post = await use_case.execute(post_id, post_update, current_user.user_id, current_user.is_superuser)
+            return updated_post
+        else:
+            get_use_case = GetPost()
+            return await get_use_case.execute(post_id)
         
     except NotFoundError as e:
         raise HTTPException(
