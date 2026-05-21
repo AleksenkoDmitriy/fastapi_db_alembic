@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from fastapi_app.src.infrastructure.postgres.models.category import Category
     from fastapi_app.src.infrastructure.postgres.models.location import Location
     from fastapi_app.src.infrastructure.postgres.models.comment import Comment
+    from .like import Like
 
 class Post(Base):
     __tablename__ = "blog_post"
@@ -29,4 +30,4 @@ class Post(Base):
     category: Mapped["Category"] = relationship("Category", back_populates="posts")
     location: Mapped[Optional["Location"]] = relationship("Location", back_populates="posts")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
-    
+    likes = relationship("Like", back_populates="post", cascade="all, delete-orphan")

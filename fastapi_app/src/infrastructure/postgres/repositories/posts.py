@@ -5,7 +5,8 @@ from datetime import datetime
 from src.infrastructure.postgres.models.post import Post
 from src.infrastructure.postgres.repositories.base import BaseRepository
 from src.core.exceptions.infrastructure_exceptions import DatabaseError
-
+from src.infrastructure.postgres.models.like import Like
+from sqlalchemy import func
 
 class PostRepository(BaseRepository[Post]):
     def __init__(self):
@@ -84,3 +85,53 @@ class PostRepository(BaseRepository[Post]):
             ).order_by(self.model.pub_date.desc()).all()
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при поиске постов по запросу '{search_term}': {str(e)}", e)
+        
+    def get_published_with_likes_count(
+        self, 
+        session: Session,
+        skip: int = 0, 
+        limit: int = 10,
+        category_id: Optional[int] = None,
+        location_id: Optional[int] = None
+    ) -> List[tuple]:
+        """Получить опубликованные посты с количеством лайков"""
+        try:
+            query = session.query(
+                Post,
+                func.count(Like.id).label("likes_count")
+            ).outerjoin(
+                Like, Post.id == Like.post_id
+            ).filter(
+                Post.is_published == True,
+                Post.pub_date <= datetime.now()
+            )
+            
+            if category_id:
+                query = query.filter(Post.category_id == category_id)
+            
+            if location_id:
+                query = query.filter(Post.location_id == location_id)
+            
+            results = query.group_by(Post.id).order_by(
+                Post.pub_date.desc()
+            ).offset(skip).limit(limit).all()
+            
+            return results
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка при получении постов с лайками: {str(e)}", e)
+    
+    def get_by_id_with_likes_count(self, session: Session, post_id: int) -> Optional[tuple]:
+        """Получить пост по ID с количеством лайков"""
+        try:
+            result = session.query(
+                Post,
+                func.count(Like.id).label("likes_count")
+            ).outerjoin(
+                Like, Post.id == Like.post_id
+            ).filter(
+                Post.id == post_id
+            ).group_by(Post.id).first()
+            
+            return result
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка при получении поста ID={post_id} с лайками: {str(e)}", e)

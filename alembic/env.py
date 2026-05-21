@@ -9,7 +9,7 @@ path = Path(__file__).parent.parent / "fastapi_app"
 sys.path.append(str(path))
 
 from fastapi_app.src.infrastructure.postgres.database import Base
-from fastapi_app.src.infrastructure.postgres.models import User, Category, Location, Post, Comment, PostLike
+from fastapi_app.src.infrastructure.postgres.models import User, Category, Location, Post, Comment
 
 config = context.config
 

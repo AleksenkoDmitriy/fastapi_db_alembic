@@ -144,3 +144,19 @@ class PostListResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class PostResponse(BaseModel):
+    id: int
+    title: str
+    text: str
+    pub_date: datetime
+    created_at: datetime
+    image: Optional[str] = None
+    is_published: bool
+    author_id: int
+    category_id: int
+    location_id: Optional[int] = None
+    likes_count: int = 0
+    
+    class Config:
+        from_attributes = True

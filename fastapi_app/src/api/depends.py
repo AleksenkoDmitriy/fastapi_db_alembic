@@ -25,6 +25,13 @@ from src.domain.post.use_cases.create_post import CreatePost
 from src.domain.post.use_cases.update_post import UpdatePost
 from src.domain.post.use_cases.delete_post import DeletePost
 
+# Likes Use Cases
+from fastapi_app.src.domain.like.use_cases.add_like import AddLikeUseCase
+from fastapi_app.src.domain.like.use_cases.remove_like import RemoveLikeUseCase
+from src.domain.like.use_cases.get_likes_count import GetLikesCountUseCase
+from src.domain.like.use_cases.check_user_likes import CheckUserLikeUseCase
+from src.domain.like.use_cases.get_user_likes import GetUserLikesUseCase
+
 # Comment Use Cases
 from src.domain.comment.use_cases.get_comments_by_post import GetCommentsByPost
 from src.domain.comment.use_cases.create_comment import CreateComment
@@ -210,3 +217,20 @@ async def get_current_staff_user(
         from src.core.exceptions.auth_exceptions import InsufficientPermissionsException
         raise InsufficientPermissionsException("Недостаточно прав для выполнения операции")
     return current_user
+
+#Likes
+
+def get_add_like_use_case() -> AddLikeUseCase:
+    return AddLikeUseCase()
+
+def get_remove_like_use_case() -> RemoveLikeUseCase:
+    return RemoveLikeUseCase()
+
+def get_likes_count_use_case() -> GetLikesCountUseCase:
+    return GetLikesCountUseCase()
+
+def get_check_user_like_use_case() -> CheckUserLikeUseCase:
+    return CheckUserLikeUseCase()
+
+def get_user_likes_use_case() -> GetUserLikesUseCase:
+    return GetUserLikesUseCase()

@@ -31,6 +31,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
+      - ./alembic/versions:/fastapi_db/alembic/versions
       - ./fastapi_app:/fastapi_app
       - ./alembic:/alembic
       - ./logs:/fastapi_app/logs

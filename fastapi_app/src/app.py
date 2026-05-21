@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 sys.path.append(str(Path(__file__).parent))
 
 from src.api import auth
-from src.api import categories, posts, comments, locations, users
+from src.api import categories, posts, comments, locations, users, likes
 from src.core.exceptions import register_exception_handlers
 from src.core.config import settings, setup_logging
 from src.api.middleware.logging_middleware import UserActionLoggingMiddleware
@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
     app.include_router(comments.router)
     app.include_router(locations.router)
     app.include_router(users.router)
+    app.include_router(likes.router)
     
     uploads_dir = Path("/fastapi_app/uploads")
     uploads_dir.mkdir(parents=True, exist_ok=True)

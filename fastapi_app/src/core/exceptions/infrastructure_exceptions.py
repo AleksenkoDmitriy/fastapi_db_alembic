@@ -19,3 +19,10 @@ class RepositoryError(InfrastructureError):
 class ForeignKeyViolationError(DatabaseError):
     """Ошибка внешнего ключа"""
     pass
+
+class IntegrityViolationError(DatabaseError):
+    """Ошибка нарушения уникальности/целостности"""
+    def __init__(self, message: str, details: dict = None):
+        self.message = message
+        self.details = details or {}
+        super().__init__(message)

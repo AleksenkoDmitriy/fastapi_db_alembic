@@ -7,6 +7,7 @@ from typing import List, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from fastapi_app.src.infrastructure.postgres.models.post import Post
     from fastapi_app.src.infrastructure.postgres.models.comment import Comment
+    from .like import Like
 
 class User(Base):
     __tablename__ = "auth_user"
@@ -25,3 +26,4 @@ class User(Base):
     
     posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="author")
+    likes = relationship("Like", back_populates="user", cascade="all, delete-orphan")
