@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime
 from typing import Optional
 from src.schemas.users import User
@@ -62,7 +62,7 @@ class Post(BaseModelSchema):
 class PostCreate(BaseModelSchema):
     title: str = Field(max_length=256)
     text: str
-    pub_date: datetime
+    pub_date: Optional[datetime] = None
     location_id: Optional[int] = None
     category_id: int
     image: Optional[str] = None
@@ -98,6 +98,13 @@ class PostCreate(BaseModelSchema):
     def validate_location_id(cls, v: Optional[int]) -> Optional[int]:
         if v is not None and v <= 0:
             raise ValueError('ID локации должен быть положительным числом')
+        return v
+    
+    @field_validator('pub_date')
+    @classmethod
+    def validate_pub_date(cls, v: datetime) -> datetime:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=datetime.now().astimezone().tzinfo)
         return v
 
 
@@ -144,6 +151,7 @@ class PostListResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
 
 class PostResponse(BaseModel):
     id: int

@@ -1,16 +1,59 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 from src.infrastructure.postgres.models.post import Post
 from src.infrastructure.postgres.repositories.base import BaseRepository
-from src.core.exceptions.infrastructure_exceptions import DatabaseError
+from src.core.exceptions.infrastructure_exceptions import DatabaseError, IntegrityViolationError
 from src.infrastructure.postgres.models.like import Like
 from sqlalchemy import func
+
 
 class PostRepository(BaseRepository[Post]):
     def __init__(self):
         super().__init__(Post)
+    
+    def create(self, session: Session, **kwargs) -> Post:
+        try:
+            post = self.model(**kwargs)
+            session.add(post)
+            session.flush()
+            return post
+        except IntegrityError as e:
+            raise IntegrityViolationError(
+                f"Ошибка целостности при создании поста: {str(e)}",
+                details={"kwargs": kwargs}
+            )
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка БД при создании поста: {str(e)}", e)
+    
+    def update(self, session: Session, id: int, **kwargs) -> Optional[Post]:
+        try:
+            post = session.query(self.model).filter(self.model.id == id).first()
+            if post:
+                for key, value in kwargs.items():
+                    setattr(post, key, value)
+                session.flush()
+            return post
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка БД при обновлении поста ID={id}: {str(e)}", e)
+    
+    def delete(self, session: Session, id: int) -> bool:
+        try:
+            post = session.query(self.model).filter(self.model.id == id).first()
+            if post:
+                session.delete(post)
+                session.flush()
+                return True
+            return False
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка БД при удалении поста ID={id}: {str(e)}", e)
+    
+    def get_by_id(self, session: Session, id: int) -> Optional[Post]:
+        try:
+            return session.query(self.model).filter(self.model.id == id).first()
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка БД при получении поста ID={id}: {str(e)}", e)
     
     def get_by_id_with_relations(self, session: Session, id: int) -> Optional[Post]:
         try:
@@ -48,44 +91,6 @@ class PostRepository(BaseRepository[Post]):
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при получении опубликованных постов: {str(e)}", e)
     
-    def get_by_author(self, session: Session, author_id: int) -> List[Post]:
-        try:
-            return session.query(self.model).filter(
-                self.model.author_id == author_id
-            ).options(
-                joinedload(self.model.category),
-                joinedload(self.model.location)
-            ).all()
-        except SQLAlchemyError as e:
-            raise DatabaseError(f"Ошибка при получении постов автора ID={author_id}: {str(e)}", e)
-    
-    def get_by_category(self, session: Session, category_id: int) -> List[Post]:
-        try:
-            return session.query(self.model).filter(
-                self.model.category_id == category_id,
-                self.model.is_published == True,
-                self.model.pub_date <= datetime.now()
-            ).options(
-                joinedload(self.model.author)
-            ).order_by(self.model.pub_date.desc()).all()
-        except SQLAlchemyError as e:
-            raise DatabaseError(f"Ошибка при получении постов категории ID={category_id}: {str(e)}", e)
-    
-    def search(self, session: Session, search_term: str) -> List[Post]:
-        try:
-            return session.query(self.model).filter(
-                self.model.is_published == True,
-                self.model.pub_date <= datetime.now()
-            ).filter(
-                (self.model.title.contains(search_term)) |
-                (self.model.text.contains(search_term))
-            ).options(
-                joinedload(self.model.author),
-                joinedload(self.model.category)
-            ).order_by(self.model.pub_date.desc()).all()
-        except SQLAlchemyError as e:
-            raise DatabaseError(f"Ошибка при поиске постов по запросу '{search_term}': {str(e)}", e)
-        
     def get_published_with_likes_count(
         self, 
         session: Session,

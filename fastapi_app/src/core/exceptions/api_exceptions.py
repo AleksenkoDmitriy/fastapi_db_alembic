@@ -52,12 +52,14 @@ def register_exception_handlers(app):
     
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        detail_message = str(exc.detail) if exc.detail else "HTTP exception occurred"
+        
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "error": {
                     "code": exc.status_code,
-                    "message": exc.detail,
+                    "message": detail_message,
                     "type": "http_exception"
                 }
             }

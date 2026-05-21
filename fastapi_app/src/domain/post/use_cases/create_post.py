@@ -3,9 +3,11 @@ from src.infrastructure.postgres.repositories.posts import PostRepository
 from src.infrastructure.postgres.repositories.categories import CategoryRepository
 from src.infrastructure.postgres.repositories.locations import LocationRepository
 from src.schemas.posts import PostCreate, Post as PostSchema
-from src.core.exceptions import DomainError, NotFoundError, DatabaseError
-from sqlalchemy.orm import selectinload
-
+from src.core.exceptions.domain_exceptions import DomainError, NotFoundError
+from src.core.exceptions.infrastructure_exceptions import DatabaseError             
+from src.infrastructure.postgres.models.users import User
+from src.infrastructure.postgres.models.category import Category
+from src.infrastructure.postgres.models.location import Location
 
 class CreatePost:
     def __init__(self):
@@ -41,10 +43,6 @@ class CreatePost:
                 session.flush()
                 session.refresh(post)
                 
-                from src.infrastructure.postgres.models.users import User
-                from src.infrastructure.postgres.models.category import Category
-                from src.infrastructure.postgres.models.location import Location
-                
                 post.author = session.get(User, author_id)
                 post.category = session.get(Category, post_data.category_id)
                 if post_data.location_id:
@@ -56,11 +54,11 @@ class CreatePost:
             raise
         except DatabaseError as e:
             raise DomainError(
-                f"Ошибка базы данных при создании поста '{post_data.title}'",
+                f"Ошибка базы данных при создании поста",
                 details={"title": post_data.title, "error": str(e)}
             )
         except Exception as e:
             raise DomainError(
-                f"Неизвестная ошибка при создании поста '{post_data.title}'",
+                f"Неизвестная ошибка при создании поста",
                 details={"title": post_data.title, "error": str(e)}
             )

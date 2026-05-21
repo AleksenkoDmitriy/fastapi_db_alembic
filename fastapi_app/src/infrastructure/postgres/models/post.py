@@ -1,6 +1,7 @@
 from src.infrastructure.postgres.database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy.sql import func
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
@@ -17,7 +18,8 @@ class Post(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    pub_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    pub_date = Column(DateTime, nullable=False, default=datetime.now)
+    created_at = Column(DateTime, server_default=func.now())
     image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

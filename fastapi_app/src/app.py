@@ -19,7 +19,6 @@ def create_app() -> FastAPI:
     app = FastAPI(
         root_path=settings.ROOT_PATH,
         title=settings.APP_NAME,
-        description="API для блога с JWT авторизацией",
         version=settings.APP_VERSION,
         debug=settings.DEBUG
     )
