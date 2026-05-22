@@ -34,8 +34,8 @@ services:
       - ./alembic/versions:/fastapi_db/alembic/versions
       - ./fastapi_app:/fastapi_app
       - ./alembic:/alembic
-      - ./logs:/fastapi_app/logs
-      - ./uploads:/fastapi_app/uploads
+      - ./logs:/fastapi_db/logs
+      - ./uploads:/fastapi_db/uploads
     env_file:
       - .env
     networks:
