@@ -16,22 +16,25 @@ class UpdateCategory:
                 if not existing:
                     raise NotFoundError(
                         entity_name="Категория",
-                        entity_id=category_id
-                    )
-                
-                if category_data.slug and category_data.slug != existing.slug:
-                    slug_exists = self._repo.get_by_slug(session, category_data.slug)
-                    if slug_exists:
-                        raise DuplicateError(
-                            entity_name="Категория",
-                            field="id",
+                        field="id",
                         value=str(category_id)
                     )
                 
-                update_data = category_data.model_dump(exclude_unset=True)
-                category = self._repo.update(session, category_id, **update_data)
+                if category_data.slug is not None and category_data.slug != existing.slug:
+                    slug_exists = self._repo.get_by_slug(session, category_data.slug)
+                    if slug_exists and slug_exists.id != category_id:
+                        raise DuplicateError(
+                            entity_name="Категория",
+                            field="slug",
+                            value=category_data.slug
+                        )
                 
-            return CategorySchema.model_validate(category)
+                update_data = category_data.model_dump(exclude_unset=True)
+                if update_data:
+                    self._repo.update(session, category_id, **update_data)
+                
+                updated = self._repo.get_by_id(session, category_id)
+                return CategorySchema.model_validate(updated)
         
         except (NotFoundError, DuplicateError):
             raise

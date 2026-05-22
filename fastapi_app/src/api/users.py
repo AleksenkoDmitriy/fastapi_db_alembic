@@ -16,7 +16,6 @@ from src.domain.user.use_cases.get_user_by_login import GetUserByLogin
 from src.domain.user.use_cases.create_user import CreateUser
 from src.domain.user.use_cases.update_user import UpdateUser
 from src.domain.user.use_cases.delete_user import DeleteUser
-from src.core.exceptions.domain_exceptions import NotFoundError, DuplicateError, DomainError
 from src.schemas.users import User, UserCreate, UserUpdate
 from src.schemas.auth import TokenData
 
@@ -31,13 +30,7 @@ async def get_users(
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Только для суперпользователей"""
-    try:
-        return await use_case.execute(skip=skip, limit=limit)
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(skip=skip, limit=limit)
 
 
 @router.get("/me", response_model=User)
@@ -46,19 +39,13 @@ async def get_current_user_info(
     use_case: GetUserById = Depends(user_by_id)
 ):
     """Информация о текущем пользователе"""
-    try:
-        user = await use_case.execute(current_user.user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Пользователь не найден"
-            )
-        return user
-    except DomainError as e:
+    user = await use_case.execute(current_user.user_id)
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден"
         )
+    return user
 
 
 @router.get("/{user_id}", response_model=User)
@@ -68,19 +55,7 @@ async def get_user(
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Получить пользователя по ID. Только для суперпользователей"""
-    try:
-        user = await use_case.execute(user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Пользователь не найден"
-            )
-        return user
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(user_id)
 
 
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
@@ -89,18 +64,7 @@ async def create_user(
     use_case: CreateUser = Depends(create_user)
 ):
     """Создать нового пользователя (открытый доступ)"""
-    try:
-        return await use_case.execute(user_data)
-    except DuplicateError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(user_data)
 
 
 @router.put("/{user_id}", response_model=User)
@@ -111,23 +75,7 @@ async def update_user(
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Обновить пользователя. Только для суперпользователей"""
-    try:
-        return await use_case.execute(user_id, user_data)
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DuplicateError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(user_id, user_data)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -137,16 +85,5 @@ async def delete_user(
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Удалить пользователя. Только для суперпользователей"""
-    try:
-        await use_case.execute(user_id)
-        return None
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    await use_case.execute(user_id)
+    return None

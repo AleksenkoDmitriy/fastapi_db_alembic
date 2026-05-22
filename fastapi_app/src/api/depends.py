@@ -50,6 +50,14 @@ from src.domain.user.use_cases.delete_user import DeleteUser
 from src.domain.auth.use_cases.authenticate_user import AuthenticateUserUseCase
 from src.domain.auth.use_cases.create_access_token import CreateAccessTokenUseCase
 
+# Subcriptions Use Cases
+from src.domain.subscription.use_cases.follow_author import FollowAuthorUseCase
+from src.domain.subscription.use_cases.unfollow_author import UnfollowAuthorUseCase
+from src.domain.subscription.use_cases.get_feed import GetFeedUseCase
+from src.domain.subscription.use_cases.get_following import GetFollowingUseCase
+from src.domain.subscription.use_cases.get_followers import GetFollowersUseCase
+from src.domain.subscription.use_cases.get_stats import GetSubscriptionStatsUseCase
+
 # Auth Dependencies (для защиты роутов)
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -162,10 +170,9 @@ def create_access_token_use_case() -> CreateAccessTokenUseCase:
     return CreateAccessTokenUseCase()
 
 
-# Auth Dependencies для защиты роутов
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    request: Request = None  # Добавлен параметр request
+    request: Request = None
 ) -> TokenData:
     try:
         token = credentials.credentials
@@ -177,7 +184,6 @@ async def get_current_user(
         if user_id is None or username is None:
             raise CredentialsException()
         
-        # Сохраняем информацию о пользователе в request.state для middleware
         if request:
             request.state.user_id = int(user_id)
             request.state.username = username
@@ -234,3 +240,22 @@ def get_check_user_like_use_case() -> CheckUserLikeUseCase:
 
 def get_user_likes_use_case() -> GetUserLikesUseCase:
     return GetUserLikesUseCase()
+
+#Subscriptions
+def get_follow_use_case() -> FollowAuthorUseCase:
+    return FollowAuthorUseCase()
+
+def get_unfollow_use_case() -> UnfollowAuthorUseCase:
+    return UnfollowAuthorUseCase()
+
+def get_feed_use_case() -> GetFeedUseCase:
+    return GetFeedUseCase()
+
+def get_following_use_case() -> GetFollowingUseCase:
+    return GetFollowingUseCase()
+
+def get_followers_use_case() -> GetFollowersUseCase:
+    return GetFollowersUseCase()
+
+def get_stats_use_case() -> GetSubscriptionStatsUseCase:
+    return GetSubscriptionStatsUseCase()

@@ -149,3 +149,29 @@ class PostRepository(BaseRepository[Post]):
             ).all()
         except SQLAlchemyError as e:
             raise DatabaseError(f"Ошибка при получении постов категории ID={category_id}: {str(e)}", e)
+    
+    def get_posts_by_authors_with_likes_count(
+        self, 
+        session: Session, 
+        author_ids: List[int], 
+        skip: int = 0, 
+        limit: int = 20
+    ) -> List[Tuple[Post, int]]:
+        """Получить посты авторов с количеством лайков"""
+        try:
+            query = session.query(
+                Post,
+                func.count(Like.id).label("likes_count")
+            ).outerjoin(
+                Like, Post.id == Like.post_id
+            ).filter(
+                Post.author_id.in_(author_ids),
+                Post.is_published == True,
+                Post.pub_date <= datetime.now()
+            ).group_by(Post.id).order_by(
+                Post.pub_date.desc()
+            ).offset(skip).limit(limit)
+            
+            return query.all()
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Ошибка при получении постов авторов: {str(e)}", e)

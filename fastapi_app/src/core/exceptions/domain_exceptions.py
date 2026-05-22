@@ -17,7 +17,7 @@ class DuplicateError(DomainError):
 class NotFoundError(DomainError):
     """Объект не найден"""
     def __init__(self, entity_name: str, field: str, value: str):
-        message = f"{entity_name} с {field} '{value}' не найдена"
+        message = f"{entity_name} с {field} '{value}' не найден(а)"
         details = {"entity": entity_name, "field": field, "value": value}
         super().__init__(message, details)
 

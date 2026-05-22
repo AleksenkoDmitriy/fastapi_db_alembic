@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from typing import List
 from src.api.depends import (
     locations,
@@ -13,7 +13,6 @@ from src.domain.location.use_cases.get_location import GetLocation
 from src.domain.location.use_cases.create_location import CreateLocation
 from src.domain.location.use_cases.update_location import UpdateLocation
 from src.domain.location.use_cases.delete_location import DeleteLocation
-from src.core.exceptions.domain_exceptions import NotFoundError, DuplicateError, DomainError
 from src.schemas.location import Location, LocationCreate, LocationUpdate
 from src.schemas.auth import TokenData
 
@@ -28,13 +27,7 @@ async def get_locations(
     use_case: GetLocations = Depends(locations)
 ):
     """Получить список локаций. Доступно всем."""
-    try:
-        return await use_case.execute(skip=skip, limit=limit, only_published=only_published)
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(skip=skip, limit=limit, only_published=only_published)
 
 
 @router.get("/{location_id}", response_model=Location)
@@ -43,40 +36,17 @@ async def get_location(
     use_case: GetLocation = Depends(location)
 ):
     """Получить локацию по ID. Доступно всем."""
-    try:
-        location = await use_case.execute(location_id)
-        if not location:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Локация не найдена"
-            )
-        return location
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(location_id)
 
 
-@router.post("/", response_model=Location, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Location, status_code=201)
 async def create_location(
     location_data: LocationCreate,
     use_case: CreateLocation = Depends(create_location),
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Создать новую локацию. Только для суперпользователя."""
-    try:
-        return await use_case.execute(location_data)
-    except DuplicateError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    return await use_case.execute(location_data)
 
 
 @router.put("/{location_id}", response_model=Location)
@@ -87,42 +57,15 @@ async def update_location(
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Обновить локацию. Только для суперпользователя."""
-    try:
-        return await use_case.execute(location_id, location_data)
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DuplicateError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
-    
+    return await use_case.execute(location_id, location_data)
 
-@router.delete("/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete("/{location_id}", status_code=204)
 async def delete_location(
     location_id: int,
     use_case: DeleteLocation = Depends(delete_location),
     current_user: TokenData = Depends(get_current_superuser)
 ):
     """Удалить локацию. Только для суперпользователя."""
-    try:
-        await use_case.execute(location_id)
-        return None
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": e.message, "details": e.details}
-        )
-    except DomainError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": e.message, "details": e.details}
-        )
+    await use_case.execute(location_id)
+    return None

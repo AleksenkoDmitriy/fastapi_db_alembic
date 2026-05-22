@@ -19,6 +19,7 @@ from src.schemas.auth import TokenData
 
 router = APIRouter(prefix="/likes", tags=["likes"])
 
+
 @router.post("/", response_model=LikeResponse, status_code=status.HTTP_201_CREATED)
 def add_like(
     like_data: LikeCreate,
@@ -26,8 +27,8 @@ def add_like(
     use_case: AddLikeUseCase = Depends(get_add_like_use_case)
 ):
     """Добавить лайк к посту"""
-    like = use_case.execute(current_user.user_id, like_data.post_id)
-    return like
+    return use_case.execute(current_user.user_id, like_data.post_id)
+
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_like(
@@ -39,6 +40,7 @@ def remove_like(
     use_case.execute(current_user.user_id, post_id)
     return None
 
+
 @router.get("/post/{post_id}/count")
 def get_likes_count(
     post_id: int,
@@ -47,6 +49,7 @@ def get_likes_count(
     """Получить количество лайков поста"""
     count = use_case.execute(post_id)
     return {"post_id": post_id, "likes_count": count}
+
 
 @router.get("/post/{post_id}/check")
 def check_user_like(
@@ -57,6 +60,7 @@ def check_user_like(
     """Проверить, лайкнул ли пользователь пост"""
     liked = use_case.execute(current_user.user_id, post_id)
     return {"post_id": post_id, "liked": liked}
+
 
 @router.get("/my-likes")
 def get_my_likes(
